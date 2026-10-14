@@ -1,0 +1,8 @@
+.DS_Store
+.thumbs.db
+node_modules/
+dist/
+.quasar/
+quasar.config.*.temporary.compiled*
+.env
+*.log

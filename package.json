@@ -1,0 +1,28 @@
+{
+  "name": "bipos-coin-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BiPOS-COIN Quasar admin client",
+  "productName": "BiPOS Coin",
+  "type": "module",
+  "scripts": {
+    "dev": "quasar dev",
+    "build": "quasar build"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.16.15",
+    "axios": "^1.7.9",
+    "pinia": "^2.3.0",
+    "quasar": "^2.17.6",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^2.0.8",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49"
+  },
+  "engines": {
+    "node": "^20 || ^18"
+  }
+}
