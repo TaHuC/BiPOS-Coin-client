@@ -1,6 +1,6 @@
 import { configure } from 'quasar/wrappers'
 
-export default configure((/* ctx */) => {
+export default configure((ctx) => {
   return {
     boot: ['axios'],
     css: ['app.scss'],
@@ -11,17 +11,21 @@ export default configure((/* ctx */) => {
         node: 'node20'
       },
       vueRouterMode: 'history',
-      // Empty = same-origin /api/ (nginx). Override only if API is on another host.
       env: {
-        API_URL: process.env.API_URL || ''
+        // prod build: '' → same-origin /api/ (nginx)
+        // dev: local API (override with API_URL=...)
+        API_URL:
+          process.env.API_URL ||
+          (ctx.dev ? 'http://127.0.0.1:3080' : '')
       }
     },
     devServer: {
       open: true,
       port: 9000,
+      // backup if someone forces API_URL='' in dev
       proxy: {
         '/api': {
-          target: process.env.API_PROXY || 'http://127.0.0.1:3080',
+          target: 'http://127.0.0.1:3080',
           changeOrigin: true
         }
       }

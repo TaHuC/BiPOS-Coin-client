@@ -1,8 +1,8 @@
 import { defineBoot } from '#q-app/wrappers'
 import axios from 'axios'
 
-// Same-origin /api/ (nginx proxy) — like other BiPOS systems.
-// Optional override: API_URL=https://host when UI and API are on different origins.
+// Dev:  http://127.0.0.1:3080  (local API)
+// Prod: '' → same-origin /api/... (nginx)
 const api = axios.create({
   baseURL: process.env.API_URL || '',
   timeout: 15000
