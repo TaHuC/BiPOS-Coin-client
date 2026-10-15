@@ -11,8 +11,9 @@ export default configure((/* ctx */) => {
         node: 'node20'
       },
       vueRouterMode: 'history',
+      // Empty = same-origin /api/ (nginx). Override only if API is on another host.
       env: {
-        API_URL: process.env.API_URL || 'http://localhost:3080'
+        API_URL: process.env.API_URL || ''
       }
     },
     devServer: {
@@ -20,7 +21,7 @@ export default configure((/* ctx */) => {
       port: 9000,
       proxy: {
         '/api': {
-          target: 'http://localhost:3080',
+          target: process.env.API_PROXY || 'http://127.0.0.1:3080',
           changeOrigin: true
         }
       }
