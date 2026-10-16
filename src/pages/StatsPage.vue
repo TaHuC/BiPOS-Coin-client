@@ -106,16 +106,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth'
+
+const REFRESH_MS = 15000
 
 const $q = useQuasar()
 const auth = useAuthStore()
 auth.hydrate()
 
 const loading = ref(false)
+let refreshTimer = null
 const totals = ref([])
 const recent = ref([])
 const byHour = ref([])
@@ -177,8 +180,8 @@ async function loadDevices() {
   }
 }
 
-async function load() {
-  loading.value = true
+async function load({ quiet = false } = {}) {
+  if (!quiet) loading.value = true
   try {
     const params = {}
     if (deviceFilter.value) params.deviceId = deviceFilter.value
@@ -188,14 +191,24 @@ async function load() {
     byHour.value = data.byHour || []
     summary.value = data.summary || { cashCents: 0, passageCount: 0 }
   } catch {
-    $q.notify({ type: 'negative', message: 'Грешка при зареждане' })
+    if (!quiet) $q.notify({ type: 'negative', message: 'Грешка при зареждане' })
   } finally {
-    loading.value = false
+    if (!quiet) loading.value = false
   }
 }
 
 onMounted(async () => {
   await loadDevices()
   await load()
+  refreshTimer = setInterval(() => {
+    load({ quiet: true })
+  }, REFRESH_MS)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
 })
 </script>

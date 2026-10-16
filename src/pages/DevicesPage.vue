@@ -3,7 +3,8 @@
     <div class="row items-center q-mb-md">
       <div class="text-h6">Устройства</div>
       <q-space />
-      <q-btn color="primary" icon="refresh" label="Обнови" :loading="loading" @click="load" />
+      <div class="text-caption text-grey-6 q-mr-md">автоматично на всеки 15 s</div>
+      <q-btn color="primary" icon="refresh" label="Обнови" :loading="loading" @click="() => load()" />
     </div>
 
     <q-table
@@ -254,16 +255,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth'
+
+const REFRESH_MS = 15000
 
 const $q = useQuasar()
 const auth = useAuthStore()
 auth.hydrate()
 
 const loading = ref(false)
+let refreshTimer = null
 const saving = ref(false)
 const devices = ref([])
 const clients = ref([])
@@ -320,20 +324,20 @@ function fieldOk(key) {
   return allowedFields.value.includes(key)
 }
 
-async function load() {
-  loading.value = true
+async function load({ quiet = false } = {}) {
+  if (!quiet) loading.value = true
   try {
     const { data } = await api.get('/api/admin/devices', { headers: auth.headers })
     devices.value = data.devices || []
     if (data.permissions) auth.permissions = data.permissions
-    if (auth.isAdmin) {
+    if (auth.isAdmin && !quiet) {
       const c = await api.get('/api/admin/clients', { headers: auth.headers })
       clients.value = c.data.clients || []
     }
   } catch {
-    $q.notify({ type: 'negative', message: 'Грешка при зареждане' })
+    if (!quiet) $q.notify({ type: 'negative', message: 'Грешка при зареждане' })
   } finally {
-    loading.value = false
+    if (!quiet) loading.value = false
   }
 }
 
@@ -428,5 +432,17 @@ async function restartDevice(row) {
   })
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  refreshTimer = setInterval(() => {
+    if (!dlg.value) load({ quiet: true })
+  }, REFRESH_MS)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+})
 </script>
