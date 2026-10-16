@@ -14,6 +14,12 @@
           :to="{ name: 'stats' }"
         />
         <q-btn
+          v-if="auth.can('canViewStats')"
+          flat
+          label="Транзакции"
+          :to="{ name: 'transactions' }"
+        />
+        <q-btn
           v-if="auth.isAdmin"
           flat
           label="Клиенти"

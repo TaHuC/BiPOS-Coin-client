@@ -101,6 +101,13 @@
       <template #body-cell-creditCents="props">
         <q-td :props="props">{{ euro(props.row.creditCents) }}</q-td>
       </template>
+      <template #body-cell-cashoutId="props">
+        <q-td :props="props">
+          <q-badge v-if="props.row.type === 'cashout'" color="orange" :label="`#${props.row.id}`" />
+          <q-badge v-else-if="props.row.cashoutId" color="blue-grey" :label="`#${props.row.cashoutId}`" />
+          <span v-else class="text-grey-6">—</span>
+        </q-td>
+      </template>
     </q-table>
   </q-page>
 </template>
@@ -146,7 +153,8 @@ const columns = [
   { name: 'deviceId', label: 'Устройство', field: 'deviceId', align: 'left' },
   { name: 'type', label: 'Тип', field: 'type', align: 'left' },
   { name: 'value', label: 'Стойност', field: 'value', align: 'right' },
-  { name: 'creditCents', label: 'Кредит', field: 'creditCents', align: 'right' }
+  { name: 'creditCents', label: 'Кредит', field: 'creditCents', align: 'right' },
+  { name: 'cashoutId', label: 'Инкасо', field: 'cashoutId', align: 'left' }
 ]
 
 const deviceOptions = computed(() =>

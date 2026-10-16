@@ -21,6 +21,11 @@ const routes = [
         component: () => import('pages/StatsPage.vue')
       },
       {
+        path: 'transactions',
+        name: 'transactions',
+        component: () => import('pages/TransactionsPage.vue')
+      },
+      {
         path: 'clients',
         name: 'clients',
         meta: { adminOnly: true },
