@@ -1,4 +1,10 @@
 import { configure } from 'quasar/wrappers'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+
+const root = dirname(fileURLToPath(import.meta.url))
+const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 
 export default configure((ctx) => {
   return {
@@ -12,6 +18,7 @@ export default configure((ctx) => {
       },
       vueRouterMode: 'history',
       env: {
+        APP_VERSION: pkg.version,
         // prod build: '' → same-origin /api/ (nginx)
         // dev: local API (override with API_URL=...)
         API_URL:
@@ -22,7 +29,6 @@ export default configure((ctx) => {
     devServer: {
       open: true,
       port: 9000,
-      // backup if someone forces API_URL='' in dev
       proxy: {
         '/api': {
           target: 'http://127.0.0.1:3080',

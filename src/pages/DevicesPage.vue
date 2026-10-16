@@ -39,6 +39,18 @@
       <template #body-cell-lastSeen="props">
         <q-td :props="props">{{ formatTime(props.row.lastSeen) }}</q-td>
       </template>
+      <template #body-cell-lastFw="props">
+        <q-td :props="props">
+          <q-badge
+            :color="fwBadgeColor(props.row.lastFw)"
+            :label="props.row.lastFw || '—'"
+          >
+            <q-tooltip>
+              {{ fwTooltip(props.row.lastFw) }}
+            </q-tooltip>
+          </q-badge>
+        </q-td>
+      </template>
       <template #body-cell-actions="props">
         <q-td :props="props" class="q-gutter-xs">
           <q-btn dense flat color="primary" label="Настройки" @click="openSettings(props.row)" />
@@ -67,7 +79,11 @@
       <q-card style="min-width: 520px; max-width: 96vw">
         <q-card-section>
           <div class="text-h6">Настройки · {{ form.id }}</div>
-          <div class="text-caption text-grey-6">Промените се дърпат от модула на ~2 мин</div>
+          <div class="text-caption text-grey-6">
+            FW {{ form.lastFw || '—' }}
+            <span v-if="latestFw">· очаквана {{ latestFw }}</span>
+            · промените се дърпат на ~2 мин
+          </div>
           <div v-if="auth.isAdmin && form.token" class="text-caption q-mt-xs">
             Device token: <code>{{ form.token }}</code>
           </div>
@@ -255,7 +271,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth'
@@ -265,6 +281,7 @@ const REFRESH_MS = 15000
 const $q = useQuasar()
 const auth = useAuthStore()
 auth.hydrate()
+const latestFw = inject('latestFw', ref(''))
 
 const loading = ref(false)
 let refreshTimer = null
@@ -295,6 +312,7 @@ const columns = computed(() => {
     cols.push({ name: 'clientName', label: 'Клиент', field: 'clientName', align: 'left' })
   }
   cols.push(
+    { name: 'lastFw', label: 'FW', field: 'lastFw', align: 'left' },
     { name: 'priceCents', label: 'Цена', field: 'priceCents', align: 'right' },
     { name: 'pulseCents', label: '1 импулс', field: 'pulseCents', align: 'right' },
     { name: 'cashCents', label: 'Натрупано', field: 'cashCents', align: 'right' },
@@ -318,6 +336,21 @@ function euro(cents) {
 }
 function formatTime(ts) {
   return ts ? new Date(ts).toLocaleString() : '—'
+}
+function fwIsCurrent(fw) {
+  const expected = latestFw?.value || ''
+  return !!(fw && expected && String(fw) === String(expected))
+}
+function fwBadgeColor(fw) {
+  if (!fw) return 'grey'
+  if (!latestFw?.value) return 'blue-grey'
+  return fwIsCurrent(fw) ? 'positive' : 'warning'
+}
+function fwTooltip(fw) {
+  const expected = latestFw?.value || '?'
+  if (!fw) return `Няма данни · очаквана ${expected}`
+  if (fwIsCurrent(fw)) return `Обновено (очаквана ${expected})`
+  return `Стара версия — очаквана ${expected}`
 }
 function fieldOk(key) {
   if (auth.isAdmin) return true
@@ -349,6 +382,7 @@ async function openSettings(row) {
     form.value = {
       id: d.id,
       token: d.token || '',
+      lastFw: d.lastFw || '',
       name: d.name || '',
       clientId: d.clientId,
       priceCents: d.priceCents,
@@ -377,6 +411,7 @@ async function save() {
     const body = { ...form.value }
     delete body.id
     delete body.token
+    delete body.lastFw
     if (!auth.isAdmin) delete body.clientId
     await api.patch(`/api/admin/devices/${form.value.id}`, body, { headers: auth.headers })
     $q.notify({ type: 'positive', message: 'Запазено — модулът ще ги вземе при следващ config pull' })

@@ -8,6 +8,11 @@
             <div class="text-caption text-grey-5">
               {{ needsSetup ? 'Първоначална настройка — създай администратор' : 'Вход (админ / клиент)' }}
             </div>
+            <div class="text-caption text-grey-6 q-mt-xs">
+              UI {{ uiVersion }}
+              <span v-if="apiVersion"> · API {{ apiVersion }}</span>
+              <span v-if="latestFw"> · FW {{ latestFw }}</span>
+            </div>
           </q-card-section>
           <q-card-section v-if="statusLoaded">
             <!-- decoy fields: browsers autofill these instead of the real inputs -->
@@ -104,6 +109,9 @@ const loading = ref(false)
 const needsSetup = ref(false)
 const statusLoaded = ref(false)
 const lockAutofill = ref(true)
+const uiVersion = process.env.APP_VERSION || '—'
+const apiVersion = ref('')
+const latestFw = ref('')
 
 onMounted(async () => {
   auth.hydrate()
@@ -111,6 +119,13 @@ onMounted(async () => {
   pass.value = ''
   pass2.value = ''
   name.value = ''
+  try {
+    const health = await api.get('/api/health')
+    apiVersion.value = health.data.version || ''
+    latestFw.value = health.data.latestFw || ''
+  } catch {
+    /* ignore */
+  }
   try {
     const { data } = await api.get('/api/admin/setup-status')
     needsSetup.value = !!data.needsSetup
