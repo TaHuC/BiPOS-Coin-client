@@ -149,7 +149,8 @@ const typeLabels = {
   unlock_wait_next: 'Чака следващо',
   passage_auto: 'Авто (без датчик)',
   cashout: 'Инкасо',
-  restart_request: 'Рестарт'
+  restart_request: 'Рестарт',
+  remote_unlock: 'Отдалечено отключване'
 }
 
 const columns = computed(() => {

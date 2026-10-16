@@ -92,7 +92,8 @@ const permKeys = [
   { key: 'canEditCoinDebounce', label: 'Монета debounce' },
   { key: 'canViewStats', label: 'Статистики' },
   { key: 'canCashout', label: 'Инкасо (нулиране на сума)' },
-  { key: 'canRestart', label: 'Рестарт на устройство' }
+  { key: 'canRestart', label: 'Рестарт на устройство' },
+  { key: 'canOpen', label: 'Отдалечено отключване (Отвори)' }
 ]
 
 const columns = [

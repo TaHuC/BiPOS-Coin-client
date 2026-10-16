@@ -145,7 +145,8 @@ const typeLabels = {
   unlock_wait: 'Чака отключване',
   unlock_wait_next: 'Чака следващо',
   passage_auto: 'Авто (без датчик)',
-  cashout: 'Инкасо'
+  cashout: 'Инкасо',
+  remote_unlock: 'Отдалечено отключване'
 }
 
 const columns = [

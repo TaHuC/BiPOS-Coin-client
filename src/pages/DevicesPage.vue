@@ -55,6 +55,14 @@
         <q-td :props="props" class="q-gutter-xs">
           <q-btn dense flat color="primary" label="Настройки" @click="openSettings(props.row)" />
           <q-btn
+            v-if="canOpen"
+            dense
+            flat
+            color="positive"
+            label="Отвори"
+            @click="openDevice(props.row)"
+          />
+          <q-btn
             v-if="canCashout"
             dense
             flat
@@ -326,6 +334,7 @@ const columns = computed(() => {
 
 const canCashout = computed(() => auth.isAdmin || auth.can('canCashout'))
 const canRestart = computed(() => auth.isAdmin || auth.can('canRestart'))
+const canOpen = computed(() => auth.isAdmin || auth.can('canOpen'))
 
 const clientOptions = computed(() =>
   clients.value.map((c) => ({ label: `${c.name || c.username} (${c.username})`, value: c.id }))
@@ -446,6 +455,23 @@ async function cashout(row) {
       load()
     } catch {
       $q.notify({ type: 'negative', message: 'Инкасо неуспешно' })
+    }
+  })
+}
+
+async function openDevice(row) {
+  $q.dialog({
+    title: 'Отвори',
+    message: `Отключване на „${row.name || row.id}“?\nРелето ще се активира при следващ heartbeat (~30 s), ако sync е включен.`,
+    cancel: true,
+    persistent: true,
+    ok: { label: 'Отвори', color: 'positive' }
+  }).onOk(async () => {
+    try {
+      await api.post(`/api/admin/devices/${row.id}/unlock`, {}, { headers: auth.headers })
+      $q.notify({ type: 'positive', message: 'Отключването е заявено — изчакай ~30 s' })
+    } catch {
+      $q.notify({ type: 'negative', message: 'Неуспешна заявка' })
     }
   })
 }
