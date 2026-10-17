@@ -26,6 +26,12 @@ const routes = [
         component: () => import('pages/TransactionsPage.vue')
       },
       {
+        path: 'firmware',
+        name: 'firmware',
+        meta: { adminOnly: true },
+        component: () => import('pages/FirmwarePage.vue')
+      },
+      {
         path: 'clients',
         name: 'clients',
         meta: { adminOnly: true },

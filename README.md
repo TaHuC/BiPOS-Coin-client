@@ -24,7 +24,10 @@ npm run build
 ### Nginx пример
 
 ```nginx
-# UI (Quasar dist/spa)
+# нужно за OTA upload на .bin (до ~4 MB)
+client_max_body_size 8m;
+
+# UI (Quasar dist/spa или dist/pwa)
 location / {
     root /var/www/bipos-coin;
     try_files $uri $uri/ /index.html;
@@ -40,6 +43,7 @@ location /api/ {
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header Connection '';
     proxy_buffering off;
+    proxy_request_buffering off;
     proxy_cache off;
     proxy_read_timeout 86400s;
     proxy_send_timeout 86400s;

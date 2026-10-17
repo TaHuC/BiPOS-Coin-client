@@ -150,7 +150,8 @@ const typeLabels = {
   passage_auto: 'Авто (без датчик)',
   cashout: 'Инкасо',
   restart_request: 'Рестарт',
-  remote_unlock: 'Отдалечено отключване'
+  remote_unlock: 'Отдалечено отключване',
+  ota_request: 'OTA заявка'
 }
 
 const columns = computed(() => {

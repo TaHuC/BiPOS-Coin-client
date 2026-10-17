@@ -72,6 +72,23 @@
             @click="cashout(props.row)"
           />
           <q-btn
+            v-if="auth.isAdmin"
+            dense
+            flat
+            color="info"
+            label="Обнови FW"
+            :disable="!canOta(props.row)"
+            @click="otaDevice(props.row)"
+          >
+            <q-tooltip>
+              {{
+                canOta(props.row)
+                  ? `OTA → ${latestFw || '?'}`
+                  : 'Качи firmware от меню Firmware или устройството вече е на тази версия'
+              }}
+            </q-tooltip>
+          </q-btn>
+          <q-btn
             v-if="canRestart"
             dense
             flat
@@ -335,6 +352,12 @@ const columns = computed(() => {
 const canCashout = computed(() => auth.isAdmin || auth.can('canCashout'))
 const canRestart = computed(() => auth.isAdmin || auth.can('canRestart'))
 const canOpen = computed(() => auth.isAdmin || auth.can('canOpen'))
+const hasFirmware = ref(false)
+
+function canOta(row) {
+  if (!auth.isAdmin || !hasFirmware.value || !latestFw?.value) return false
+  return String(row.lastFw || '') !== String(latestFw.value)
+}
 
 const clientOptions = computed(() =>
   clients.value.map((c) => ({ label: `${c.name || c.username} (${c.username})`, value: c.id }))
@@ -372,9 +395,20 @@ async function load({ quiet = false } = {}) {
     const { data } = await api.get('/api/admin/devices', { headers: auth.headers })
     devices.value = data.devices || []
     if (data.permissions) auth.permissions = data.permissions
-    if (auth.isAdmin && !quiet) {
-      const c = await api.get('/api/admin/clients', { headers: auth.headers })
-      clients.value = c.data.clients || []
+    if (auth.isAdmin) {
+      if (!quiet) {
+        const c = await api.get('/api/admin/clients', { headers: auth.headers })
+        clients.value = c.data.clients || []
+      }
+      try {
+        const fw = await api.get('/api/admin/firmware', { headers: auth.headers })
+        hasFirmware.value = !!fw.data.firmware?.version
+        if (fw.data.firmware?.version && latestFw) {
+          latestFw.value = fw.data.firmware.version
+        }
+      } catch {
+        hasFirmware.value = false
+      }
     }
   } catch {
     if (!quiet) $q.notify({ type: 'negative', message: 'Грешка при зареждане' })
@@ -455,6 +489,35 @@ async function cashout(row) {
       load()
     } catch {
       $q.notify({ type: 'negative', message: 'Инкасо неуспешно' })
+    }
+  })
+}
+
+async function otaDevice(row) {
+  $q.dialog({
+    title: 'Обнови FW',
+    message: `OTA на „${row.name || row.id}“ → ${latestFw?.value || '?'}?\nМодулът трябва да е idle; download при следващ heartbeat (~30 s).`,
+    cancel: true,
+    persistent: true,
+    ok: { label: 'Обнови FW', color: 'info' }
+  }).onOk(async () => {
+    try {
+      const { data } = await api.post(
+        `/api/admin/devices/${row.id}/ota`,
+        {},
+        { headers: auth.headers }
+      )
+      $q.notify({
+        type: 'positive',
+        message: `OTA заявено → ${data.targetVersion}`
+      })
+      load({ quiet: true })
+    } catch (e) {
+      const err = e?.response?.data?.error
+      $q.notify({
+        type: 'negative',
+        message: err === 'no_firmware' ? 'Няма качен firmware' : 'Неуспешна заявка'
+      })
     }
   })
 }

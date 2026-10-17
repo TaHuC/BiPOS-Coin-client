@@ -22,6 +22,12 @@
         <q-btn
           v-if="auth.isAdmin"
           flat
+          label="Firmware"
+          :to="{ name: 'firmware' }"
+        />
+        <q-btn
+          v-if="auth.isAdmin"
+          flat
           label="Клиенти"
           :to="{ name: 'clients' }"
         />
