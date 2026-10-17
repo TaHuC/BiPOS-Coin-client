@@ -1,10 +1,11 @@
 <template>
   <q-page padding>
-    <div class="row items-center q-mb-md">
-      <div class="text-h6">Устройства</div>
-      <q-space />
-      <div class="text-caption text-grey-6 q-mr-md">автоматично на всеки 15 s</div>
-      <q-btn color="primary" icon="refresh" label="Обнови" :loading="loading" @click="() => load()" />
+    <div class="row items-center q-mb-md q-col-gutter-sm">
+      <div class="col-grow text-h6">Устройства</div>
+      <div class="col-auto text-caption text-grey-6 gt-xs">автоматично на всеки 15 s</div>
+      <div class="col-auto">
+        <q-btn color="primary" icon="refresh" label="Обнови" :loading="loading" @click="() => load()" />
+      </div>
     </div>
 
     <q-table
@@ -135,20 +136,20 @@
       </template>
     </q-table>
 
-    <q-dialog v-model="dlg" persistent>
-      <q-card style="min-width: 520px; max-width: 96vw">
+    <q-dialog v-model="dlg" persistent :maximized="$q.screen.lt.sm">
+      <q-card class="settings-card">
         <q-card-section>
-          <div class="text-h6">Настройки · {{ form.id }}</div>
+          <div class="text-h6 ellipsis">Настройки · {{ form.id }}</div>
           <div class="text-caption text-grey-6">
             FW {{ form.lastFw || '—' }}
             <span v-if="latestFw">· очаквана {{ latestFw }}</span>
             · промените се дърпат на ~2 мин
           </div>
-          <div v-if="auth.isAdmin && form.token" class="text-caption q-mt-xs">
+          <div v-if="auth.isAdmin && form.token" class="text-caption q-mt-xs token-line">
             Device token: <code>{{ form.token }}</code>
           </div>
         </q-card-section>
-        <q-card-section class="q-gutter-sm" style="max-height: 70vh; overflow: auto">
+        <q-card-section class="q-gutter-sm settings-body">
           <q-input
             v-model="form.name"
             label="Име на устройството"
@@ -171,7 +172,7 @@
           />
 
           <div class="row q-col-gutter-sm">
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.priceCents"
                 type="number"
@@ -182,7 +183,7 @@
                 :disable="!fieldOk('priceCents')"
               />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.pulseCents"
                 type="number"
@@ -207,7 +208,7 @@
           />
 
           <div class="row q-col-gutter-sm">
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.relayMs"
                 type="number"
@@ -217,7 +218,7 @@
                 :disable="!fieldOk('relayMs')"
               />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.coinDebounceMs"
                 type="number"
@@ -231,7 +232,7 @@
           </div>
 
           <div class="row q-col-gutter-sm">
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.unlockDelayMs"
                 type="number"
@@ -241,7 +242,7 @@
                 :disable="!fieldOk('unlockDelayMs')"
               />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.nextUnlockDelayMs"
                 type="number"
@@ -265,7 +266,7 @@
           />
 
           <div class="row q-col-gutter-sm">
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.passageMinMs"
                 type="number"
@@ -275,7 +276,7 @@
                 :disable="!fieldOk('passageMinMs')"
               />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.passageDebounceMs"
                 type="number"
@@ -288,7 +289,7 @@
           </div>
 
           <div class="row q-col-gutter-sm">
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.passageIgnoreMs"
                 type="number"
@@ -298,7 +299,7 @@
                 :disable="!fieldOk('passageIgnoreMs')"
               />
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
               <q-input
                 v-model.number="form.passageTimeoutMs"
                 type="number"
@@ -321,7 +322,7 @@
             :disable="!fieldOk('creditClearMin')"
           />
         </q-card-section>
-        <q-card-actions align="right">
+        <q-card-actions align="right" class="q-pa-md">
           <q-btn flat label="Отказ" v-close-popup />
           <q-btn color="primary" label="Запази" :loading="saving" @click="save" />
         </q-card-actions>
@@ -623,3 +624,30 @@ onUnmounted(() => {
   }
 })
 </script>
+
+<style scoped>
+.settings-card {
+  width: min(560px, 100%);
+  max-width: 100vw;
+}
+.settings-body {
+  max-height: min(70vh, calc(100dvh - 180px));
+  overflow: auto;
+}
+.token-line code {
+  word-break: break-all;
+}
+@media (max-width: 599px) {
+  .settings-card {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .settings-body {
+    flex: 1 1 auto;
+    max-height: none;
+  }
+}
+</style>

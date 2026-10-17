@@ -31,12 +31,12 @@
       </template>
     </q-table>
 
-    <q-dialog v-model="dlg" persistent>
-      <q-card style="min-width: 480px; max-width: 96vw">
+    <q-dialog v-model="dlg" persistent :maximized="$q.screen.lt.sm">
+      <q-card class="settings-card">
         <q-card-section>
           <div class="text-h6">{{ editId ? 'Редакция клиент' : 'Нов клиент' }}</div>
         </q-card-section>
-        <q-card-section class="q-gutter-sm">
+        <q-card-section class="q-gutter-sm settings-body">
           <q-input v-model="form.username" label="Потребител (login)" filled dense :disable="!!editId" />
           <q-input v-model="form.name" label="Име / фирма" filled dense />
           <q-input
@@ -213,3 +213,14 @@ function remove(row) {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.settings-card {
+  width: min(520px, 100%);
+  max-width: 100vw;
+}
+.settings-body {
+  max-height: min(70vh, calc(100dvh - 160px));
+  overflow: auto;
+}
+</style>
