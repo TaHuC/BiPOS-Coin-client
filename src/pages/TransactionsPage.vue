@@ -151,6 +151,7 @@ const typeLabels = {
   cashout: 'Инкасо',
   restart_request: 'Рестарт',
   remote_unlock: 'Отдалечено отключване',
+  remote_clear_credit: 'Отдалечено изчистване кредит',
   ota_request: 'OTA заявка'
 }
 

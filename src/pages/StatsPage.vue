@@ -147,6 +147,7 @@ const typeLabels = {
   passage_auto: 'Авто (без датчик)',
   cashout: 'Инкасо',
   remote_unlock: 'Отдалечено отключване',
+  remote_clear_credit: 'Отдалечено изчистване кредит',
   ota_request: 'OTA заявка'
 }
 

@@ -93,7 +93,8 @@ const permKeys = [
   { key: 'canViewStats', label: 'Статистики' },
   { key: 'canCashout', label: 'Инкасо (нулиране на сума)' },
   { key: 'canRestart', label: 'Рестарт на устройство' },
-  { key: 'canOpen', label: 'Отдалечено отключване (Отвори)' }
+  { key: 'canOpen', label: 'Отдалечено отключване (Отвори)' },
+  { key: 'canClearCredit', label: 'Изчистване на кредит на устройство' }
 ]
 
 const columns = [

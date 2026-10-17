@@ -63,6 +63,15 @@
             @click="openDevice(props.row)"
           />
           <q-btn
+            v-if="canClearCredit"
+            dense
+            flat
+            color="warning"
+            label="Изчисти кредит"
+            :disable="!(props.row.lastCredit > 0)"
+            @click="clearCredit(props.row)"
+          />
+          <q-btn
             v-if="canCashout"
             dense
             flat
@@ -352,6 +361,7 @@ const columns = computed(() => {
 const canCashout = computed(() => auth.isAdmin || auth.can('canCashout'))
 const canRestart = computed(() => auth.isAdmin || auth.can('canRestart'))
 const canOpen = computed(() => auth.isAdmin || auth.can('canOpen'))
+const canClearCredit = computed(() => auth.isAdmin || auth.can('canClearCredit'))
 const hasFirmware = ref(false)
 
 function canOta(row) {
@@ -533,6 +543,23 @@ async function openDevice(row) {
     try {
       await api.post(`/api/admin/devices/${row.id}/unlock`, {}, { headers: auth.headers })
       $q.notify({ type: 'positive', message: 'Отключването е заявено — изчакай ~30 s' })
+    } catch {
+      $q.notify({ type: 'negative', message: 'Неуспешна заявка' })
+    }
+  })
+}
+
+async function clearCredit(row) {
+  $q.dialog({
+    title: 'Изчисти кредит',
+    message: `Нулиране на кредита на „${row.name || row.id}“?\nТекущо: ${euro(row.lastCredit)}\nМодулът ще изчисти при следващ heartbeat (~30 s).`,
+    cancel: true,
+    persistent: true,
+    ok: { label: 'Изчисти', color: 'warning' }
+  }).onOk(async () => {
+    try {
+      await api.post(`/api/admin/devices/${row.id}/clear-credit`, {}, { headers: auth.headers })
+      $q.notify({ type: 'positive', message: 'Изчистването е заявено — изчакай ~30 s' })
     } catch {
       $q.notify({ type: 'negative', message: 'Неуспешна заявка' })
     }
