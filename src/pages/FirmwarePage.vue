@@ -44,9 +44,9 @@
       <q-card-section>
         <div class="text-subtitle1 q-mb-sm">Качване на нов .bin</div>
         <div class="text-caption text-grey-6 q-mb-md">
-          Билд от PlatformIO (`firmware.bin`). Версията трябва да съвпада с
-          <code>BIPOS_FW_VERSION</code> в бинарника. Устройствата дърпат през HTTPS при idle (~30 s
-          heartbeat). Първият OTA-capable build (1.2.0+) се флашва веднъж по кабел.
+          Билд от PlatformIO (`firmware.bin`, ~1–1.5 MB). Версията = <code>BIPOS_FW_VERSION</code>.
+          Ако качването даде 413 — в nginx: <code>client_max_body_size 8m;</code> и
+          <code>nginx -s reload</code>. Устройствата дърпат през HTTPS при idle (~30 s).
         </div>
         <q-input
           v-model="version"
@@ -136,11 +136,18 @@ async function upload() {
     file.value = null
     $q.notify({ type: 'positive', message: `Качено ${data.firmware.version}` })
   } catch (e) {
+    const status = e?.response?.status
     const err = e?.response?.data?.error
-    $q.notify({
-      type: 'negative',
-      message: err === 'only_bin' ? 'Само .bin файлове' : 'Качването неуспешно'
-    })
+    let message = 'Качването неуспешно'
+    if (status === 413) {
+      message =
+        'Файлът е твърде голям (413). В nginx сложи: client_max_body_size 8m; и reload.'
+    } else if (err === 'only_bin') {
+      message = 'Само .bin файлове'
+    } else if (err === 'too_large') {
+      message = 'Файлът надвишава 4 MB лимита на API'
+    }
+    $q.notify({ type: 'negative', message })
   } finally {
     uploading.value = false
   }
