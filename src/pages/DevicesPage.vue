@@ -66,6 +66,17 @@
               {{ fwTooltip(props.row.lastFw) }}
             </q-tooltip>
           </q-badge>
+          <q-badge
+            v-if="props.row.otaRequested"
+            class="q-ml-xs"
+            color="info"
+            :label="`OTA→${props.row.otaTargetVersion || '?'}`"
+          >
+            <q-tooltip>
+              Заявено обновяване. Трябва FW ≥ 1.2.0, sync ON, idle, качен .bin на сървъра.
+              Ако модулът е 1.1.x — само USB flash, OTA няма.
+            </q-tooltip>
+          </q-badge>
         </q-td>
       </template>
       <template #body-cell-actions="props">
