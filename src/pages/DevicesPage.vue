@@ -23,11 +23,28 @@
         <q-td :props="props">{{ euro(props.row.pulseCents) }}</q-td>
       </template>
       <template #body-cell-lastCredit="props">
-        <q-td :props="props">{{ euro(props.row.lastCredit) }}</q-td>
+        <q-td :props="props">
+          <q-badge
+            v-if="props.row.lastCredit > 0"
+            color="warning"
+            text-color="dark"
+            :label="euro(props.row.lastCredit)"
+          >
+            <q-tooltip>Натрупан кредит на модула (остатък)</q-tooltip>
+          </q-badge>
+          <span v-else class="text-grey-6">—</span>
+        </q-td>
       </template>
       <template #body-cell-cashCents="props">
         <q-td :props="props">
-          <strong>{{ euro(props.row.cashCents) }}</strong>
+          <q-badge
+            v-if="props.row.cashCents > 0"
+            color="orange"
+            :label="euro(props.row.cashCents)"
+          >
+            <q-tooltip>Натрупано до инкасо</q-tooltip>
+          </q-badge>
+          <span v-else class="text-grey-6">—</span>
         </q-td>
       </template>
       <template #body-cell-passageCount="props">
@@ -63,21 +80,19 @@
             @click="openDevice(props.row)"
           />
           <q-btn
-            v-if="canClearCredit"
+            v-if="canClearCredit && props.row.lastCredit > 0"
             dense
             flat
             color="warning"
-            label="Изчисти кредит"
-            :disable="!(props.row.lastCredit > 0)"
+            :label="`Изчисти ${euro(props.row.lastCredit)}`"
             @click="clearCredit(props.row)"
           />
           <q-btn
-            v-if="canCashout"
+            v-if="canCashout && props.row.cashCents > 0"
             dense
             flat
             color="orange"
-            label="Инкасо"
-            :disable="!(props.row.cashCents > 0)"
+            :label="`Инкасо ${euro(props.row.cashCents)}`"
             @click="cashout(props.row)"
           />
           <q-btn
@@ -347,11 +362,11 @@ const columns = computed(() => {
   }
   cols.push(
     { name: 'lastFw', label: 'FW', field: 'lastFw', align: 'left' },
+    { name: 'lastCredit', label: 'Кредит', field: 'lastCredit', align: 'right' },
+    { name: 'cashCents', label: 'Натрупано', field: 'cashCents', align: 'right' },
     { name: 'priceCents', label: 'Цена', field: 'priceCents', align: 'right' },
     { name: 'pulseCents', label: '1 импулс', field: 'pulseCents', align: 'right' },
-    { name: 'cashCents', label: 'Натрупано', field: 'cashCents', align: 'right' },
     { name: 'passageCount', label: 'Преминавания', field: 'passageCount', align: 'right' },
-    { name: 'lastCredit', label: 'Кредит', field: 'lastCredit', align: 'right' },
     { name: 'lastSeen', label: 'Последно', field: 'lastSeen', align: 'left' },
     { name: 'actions', label: '', field: 'actions', align: 'right' }
   )
