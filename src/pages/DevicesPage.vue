@@ -223,13 +223,23 @@
                 v-model.number="form.coinDebounceMs"
                 type="number"
                 label="Монета debounce (ms)"
-                hint="като паркинга: 80"
+                hint="мин. между импулси · 80"
                 filled
                 dense
                 :disable="!fieldOk('coinDebounceMs')"
               />
             </div>
           </div>
+
+          <q-input
+            v-model.number="form.coinTrainGapMs"
+            type="number"
+            label="Край на монета / пауза (ms)"
+            hint="тишина след последния импулс = 1 монета (5×10¢ → 0.50) · по подразбиране 300"
+            filled
+            dense
+            :disable="!fieldOk('coinTrainGapMs')"
+          />
 
           <div class="row q-col-gutter-sm">
             <div class="col-12 col-sm-6">
@@ -476,6 +486,7 @@ async function openSettings(row) {
       passageIgnoreMs: d.passageIgnoreMs,
       passageTimeoutMs: d.passageTimeoutMs,
       coinDebounceMs: d.coinDebounceMs,
+      coinTrainGapMs: d.coinTrainGapMs ?? 300,
       sensorType: d.sensorType,
       creditClearMin: d.creditClearMin ?? 0
     }

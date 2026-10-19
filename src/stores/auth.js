@@ -67,6 +67,16 @@ export const useAuthStore = defineStore('auth', {
         return false
       }
     },
+    async setup(user, pass, name = '') {
+      const { data } = await api.post('/api/admin/setup', { user, pass, name })
+      this.user = user
+      this.pass = pass
+      this.role = data.user?.role || 'admin'
+      this.name = data.user?.name || name || user
+      this.userId = data.user?.id ?? null
+      this.permissions = null
+      persist(this)
+    },
     async login(user, pass) {
       const { data } = await api.post('/api/admin/login', { user, pass })
       this.user = user
