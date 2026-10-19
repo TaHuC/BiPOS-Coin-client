@@ -311,10 +311,12 @@
             </div>
             <div class="col-12 col-sm-6">
               <q-input
-                v-model.number="form.passageTimeoutMs"
+                v-model.number="form.passageTimeoutSec"
                 type="number"
-                label="Чакане / таймер (ms)"
-                hint="при Изключен датчик = авто освобождаване · 0 = веднага"
+                min="0"
+                max="600"
+                label="Изчакване за преминаване (сек)"
+                hint="след отключване · ако никой не мине — пуска следваща монета · 0 = безкрайно (забива!)"
                 filled
                 dense
                 :disable="!fieldOk('passageTimeoutMs')"
@@ -484,7 +486,7 @@ async function openSettings(row) {
       passageMinMs: d.passageMinMs,
       passageDebounceMs: d.passageDebounceMs,
       passageIgnoreMs: d.passageIgnoreMs,
-      passageTimeoutMs: d.passageTimeoutMs,
+      passageTimeoutSec: Math.round((d.passageTimeoutMs ?? 0) / 1000),
       coinDebounceMs: d.coinDebounceMs,
       coinTrainGapMs: d.coinTrainGapMs ?? 300,
       sensorType: d.sensorType,
@@ -500,6 +502,11 @@ async function save() {
   saving.value = true
   try {
     const body = { ...form.value }
+    const sec = Number(body.passageTimeoutSec)
+    body.passageTimeoutMs = Number.isFinite(sec)
+      ? Math.max(0, Math.min(600, Math.round(sec))) * 1000
+      : 0
+    delete body.passageTimeoutSec
     delete body.id
     delete body.token
     delete body.lastFw
