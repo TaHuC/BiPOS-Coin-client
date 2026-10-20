@@ -580,14 +580,17 @@ async function otaDevice(row) {
 async function openDevice(row) {
   $q.dialog({
     title: 'Отвори',
-    message: `Отключване на „${row.name || row.id}“?\nРелето ще се активира при следващ heartbeat (~30 s), ако sync е включен.`,
+    message: `Отключване на „${row.name || row.id}“?\nМодулът отключва при следващ heartbeat (до ~30 s). Устройството трябва да е online.`,
     cancel: true,
     persistent: true,
     ok: { label: 'Отвори', color: 'positive' }
   }).onOk(async () => {
     try {
       await api.post(`/api/admin/devices/${row.id}/unlock`, {}, { headers: auth.headers })
-      $q.notify({ type: 'positive', message: 'Отключването е заявено — изчакай ~30 s' })
+      $q.notify({
+        type: 'positive',
+        message: 'Отключването е заявено — изчакай до ~30 s (модулът трябва да е online)'
+      })
     } catch {
       $q.notify({ type: 'negative', message: 'Неуспешна заявка' })
     }
