@@ -171,6 +171,18 @@
             clearable
           />
 
+          <q-input
+            v-if="auth.isAdmin"
+            v-model="form.lcdLine2"
+            label="LCD ред 2 — реклама"
+            hint="В покой на дисплея. Над 16 символа = бягащ текст. Празно = FW версия. Макс. 64."
+            filled
+            dense
+            maxlength="64"
+            counter
+            :disable="!fieldOk('lcdLine2')"
+          />
+
           <div class="row q-col-gutter-sm">
             <div class="col-12 col-sm-6">
               <q-input
@@ -490,7 +502,8 @@ async function openSettings(row) {
       coinDebounceMs: d.coinDebounceMs,
       coinTrainGapMs: d.coinTrainGapMs ?? 300,
       sensorType: d.sensorType,
-      creditClearMin: d.creditClearMin ?? 0
+      creditClearMin: d.creditClearMin ?? 0,
+      lcdLine2: d.lcdLine2 || ''
     }
     dlg.value = true
   } catch {
