@@ -3,7 +3,7 @@
     <div class="row items-center q-mb-md q-col-gutter-sm">
       <div class="col-auto text-h6">Статистики</div>
       <q-space />
-      <div class="col-12 col-sm-4">
+      <div class="col-12 col-sm-3">
         <q-select
           v-model="deviceFilter"
           :options="deviceOptions"
@@ -16,12 +16,48 @@
           @update:model-value="load"
         />
       </div>
-      <div class="col-auto">
+      <div class="col-12 col-sm-3">
+        <q-select
+          v-model="periodMode"
+          :options="periodModeOptions"
+          label="Период"
+          dense
+          outlined
+          emit-value
+          map-options
+          @update:model-value="onPeriodMode"
+        />
+      </div>
+      <div v-if="periodMode === 'month'" class="col-12 col-sm-2">
+        <q-input
+          v-model="monthValue"
+          type="month"
+          label="Месец"
+          dense
+          outlined
+          @update:model-value="load"
+        />
+      </div>
+      <div class="col-auto row q-gutter-sm">
         <q-btn color="primary" icon="refresh" label="Обнови" :loading="loading" @click="() => load()" />
+        <q-btn
+          color="negative"
+          outline
+          icon="picture_as_pdf"
+          label="PDF"
+          :disable="loading"
+          @click="exportPdf"
+        />
       </div>
     </div>
 
-    <!-- Money that matters -->
+    <div class="text-caption text-grey-6 q-mb-md">
+      Справка:
+      <strong>{{ periodTitle }}</strong>
+      <span v-if="deviceLabel"> · {{ deviceLabel }}</span>
+    </div>
+
+    <!-- Live cash vs period money -->
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col-12 col-sm-4">
         <q-card flat bordered class="bg-orange-1">
@@ -29,7 +65,7 @@
             <div class="text-caption text-grey-8">За инкасо сега</div>
             <div class="text-h4 text-orange-10">{{ euro(summary.cashCents) }}</div>
             <div class="text-caption text-grey-7">
-              Реална натрупана сума в касата на модула до следващо инкасо. Това е парите за събиране.
+              Текуща каса до следващо инкасо (не зависи от периода).
             </div>
           </q-card-section>
         </q-card>
@@ -37,26 +73,31 @@
       <div class="col-12 col-sm-4">
         <q-card flat bordered>
           <q-card-section>
-            <div class="text-caption text-grey-5">Монети (последните 7 дни)</div>
-            <div class="text-h5">{{ euro(coinSum7d) }}</div>
-            <div class="text-caption text-grey-6">{{ coinCount7d }} събития · история, не = каса</div>
+            <div class="text-caption text-grey-5">Монети в периода</div>
+            <div class="text-h5">{{ euro(summary.coinCents) }}</div>
+            <div class="text-caption text-grey-6">
+              {{ summary.coinCount || 0 }} събития · история
+            </div>
           </q-card-section>
         </q-card>
       </div>
       <div class="col-12 col-sm-4">
         <q-card flat bordered>
           <q-card-section>
-            <div class="text-caption text-grey-5">Преминавания (общо на модула)</div>
-            <div class="text-h5">{{ summary.passageCount || 0 }}</div>
+            <div class="text-caption text-grey-5">Инкасо в периода</div>
+            <div class="text-h5">{{ euro(summary.cashoutCents) }}</div>
+            <div class="text-caption text-grey-6">
+              {{ summary.cashoutCount || 0 }} пъти · преминавания:
+              {{ summary.passageCountPeriod || 0 }}
+            </div>
           </q-card-section>
         </q-card>
       </div>
     </div>
 
-    <div class="text-subtitle2 q-mb-sm">Събития (брой) — не са суми за инкасо</div>
+    <div class="text-subtitle2 q-mb-sm">Събития в периода (брой)</div>
     <div class="text-caption text-grey-6 q-mb-md">
-      „Реле ON / Чака отключване“ пазят време в ms в полето value — това не са евро. Пари са само
-      <strong>Монета</strong> и <strong>Инкасо</strong>.
+      Пари са само <strong>Монета</strong> и <strong>Инкасо</strong>. „Реле ON“ пази ms, не евро.
     </div>
 
     <div class="row q-col-gutter-md q-mb-md">
@@ -71,9 +112,31 @@
       </div>
     </div>
 
+    <q-card v-if="byDay.length" flat bordered class="q-mb-md">
+      <q-card-section>
+        <div class="text-subtitle1 q-mb-sm">По дни</div>
+        <q-table
+          flat
+          dense
+          hide-pagination
+          :rows="byDay"
+          :columns="dayColumns"
+          row-key="day"
+          :pagination="{ rowsPerPage: 0 }"
+        >
+          <template #body-cell-coinCents="props">
+            <q-td :props="props">{{ euro(props.row.coinCents) }}</q-td>
+          </template>
+          <template #body-cell-cashoutCents="props">
+            <q-td :props="props">{{ euro(props.row.cashoutCents) }}</q-td>
+          </template>
+        </q-table>
+      </q-card-section>
+    </q-card>
+
     <q-card flat bordered class="q-mb-md">
       <q-card-section>
-        <div class="text-subtitle1 q-mb-sm">Натовареност по часове (последните 7 дни)</div>
+        <div class="text-subtitle1 q-mb-sm">Натовареност по часове</div>
         <div class="row items-end q-gutter-xs" style="min-height: 140px">
           <div
             v-for="h in byHour"
@@ -99,16 +162,13 @@
             <div class="text-caption text-grey-6" style="font-size: 10px">{{ h.hour }}</div>
           </div>
         </div>
-        <div class="text-caption text-grey-6 q-mt-sm">
-          Височината = брой събития (монета / преминаване / unlock) в този час.
-        </div>
       </q-card-section>
     </q-card>
 
     <q-table
       flat
       bordered
-      title="Последни събития"
+      title="Събития в периода"
       row-key="id"
       :rows="recent"
       :columns="columns"
@@ -144,10 +204,7 @@ import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth'
 
 const REFRESH_MS = 15000
-
-/** Event types where value is money (cents) */
 const MONEY_TYPES = new Set(['coin', 'cashout', 'unlock'])
-/** Event types where value is milliseconds */
 const MS_TYPES = new Set(['relay_on', 'unlock_wait', 'unlock_wait_next', 'passage_timeout'])
 
 const $q = useQuasar()
@@ -159,9 +216,27 @@ let refreshTimer = null
 const totals = ref([])
 const recent = ref([])
 const byHour = ref([])
-const summary = ref({ cashCents: 0, passageCount: 0 })
+const byDay = ref([])
+const summary = ref({
+  cashCents: 0,
+  passageCount: 0,
+  coinCents: 0,
+  coinCount: 0,
+  cashoutCents: 0,
+  cashoutCount: 0,
+  passageCountPeriod: 0,
+  unlockCount: 0
+})
 const devices = ref([])
 const deviceFilter = ref(null)
+const periodMode = ref('month')
+const monthValue = ref(currentMonthStr())
+
+const periodModeOptions = [
+  { label: 'Месец', value: 'month' },
+  { label: 'Последните 7 дни', value: '7d' },
+  { label: 'Предишен месец', value: 'prev' }
+]
 
 const typeLabels = {
   coin: 'Монета',
@@ -179,6 +254,8 @@ const typeLabels = {
   remote_unlock: 'Отдалечено отключване',
   remote_clear_credit: 'Отдалечено изчистване кредит',
   ota_request: 'OTA заявка',
+  ota_start: 'OTA старт',
+  ota_fail: 'OTA грешка',
   restart_request: 'Рестарт'
 }
 
@@ -191,6 +268,16 @@ const columns = [
   { name: 'cashoutId', label: 'Инкасо', field: 'cashoutId', align: 'left' }
 ]
 
+const dayColumns = [
+  { name: 'day', label: 'Ден', field: 'day', align: 'left' },
+  { name: 'coin', label: 'Монети', field: 'coin', align: 'right' },
+  { name: 'coinCents', label: 'Сума', field: 'coinCents', align: 'right' },
+  { name: 'passage', label: 'Преминавания', field: 'passage', align: 'right' },
+  { name: 'unlock', label: 'Отключвания', field: 'unlock', align: 'right' },
+  { name: 'cashout', label: 'Инкасо бр.', field: 'cashout', align: 'right' },
+  { name: 'cashoutCents', label: 'Инкасо €', field: 'cashoutCents', align: 'right' }
+]
+
 const deviceOptions = computed(() =>
   devices.value.map((d) => ({
     label: `${d.name || d.id} (${d.id})`,
@@ -198,16 +285,41 @@ const deviceOptions = computed(() =>
   }))
 )
 
-const coinRow = computed(() => totals.value.find((t) => t.type === 'coin'))
-const coinSum7d = computed(() => Number(coinRow.value?.sumValue) || 0)
-const coinCount7d = computed(() => Number(coinRow.value?.count) || 0)
+const deviceLabel = computed(() => {
+  if (!deviceFilter.value) return 'Всички устройства'
+  const d = devices.value.find((x) => x.id === deviceFilter.value)
+  return d ? `${d.name || d.id} (${d.id})` : deviceFilter.value
+})
 
-/** All totals except we already highlight coin in money row — still list coin for completeness */
+const periodTitle = computed(() => {
+  if (periodMode.value === '7d') return 'Последните 7 дни'
+  if (periodMode.value === 'prev') return `Месец ${monthValue.value}`
+  return `Месец ${monthValue.value}`
+})
+
 const activityTotals = computed(() =>
   totals.value.slice().sort((a, b) => (b.count || 0) - (a.count || 0))
 )
 
 const maxHour = computed(() => Math.max(1, ...byHour.value.map((h) => h.total || 0)))
+
+function currentMonthStr() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function prevMonthStr() {
+  const d = new Date()
+  d.setDate(1)
+  d.setMonth(d.getMonth() - 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function onPeriodMode(mode) {
+  if (mode === 'prev') monthValue.value = prevMonthStr()
+  if (mode === 'month' && !monthValue.value) monthValue.value = currentMonthStr()
+  load()
+}
 
 function euro(cents) {
   return `${((Number(cents) || 0) / 100).toFixed(2)} €`
@@ -241,6 +353,17 @@ function formatExtra(t) {
   return 'брой събития'
 }
 
+function buildParams() {
+  const params = {}
+  if (deviceFilter.value) params.deviceId = deviceFilter.value
+  if (periodMode.value === '7d') {
+    params.since = Date.now() - 7 * 24 * 3600 * 1000
+  } else {
+    params.month = monthValue.value || currentMonthStr()
+  }
+  return params
+}
+
 async function loadDevices() {
   try {
     const { data } = await api.get('/api/admin/devices', { headers: auth.headers })
@@ -253,18 +376,130 @@ async function loadDevices() {
 async function load({ quiet = false } = {}) {
   if (!quiet) loading.value = true
   try {
-    const params = {}
-    if (deviceFilter.value) params.deviceId = deviceFilter.value
-    const { data } = await api.get('/api/admin/stats', { headers: auth.headers, params })
+    const { data } = await api.get('/api/admin/stats', {
+      headers: auth.headers,
+      params: buildParams()
+    })
     totals.value = data.totals || []
     recent.value = data.recent || []
     byHour.value = data.byHour || []
-    summary.value = data.summary || { cashCents: 0, passageCount: 0 }
+    byDay.value = data.byDay || []
+    summary.value = {
+      cashCents: 0,
+      passageCount: 0,
+      coinCents: 0,
+      coinCount: 0,
+      cashoutCents: 0,
+      cashoutCount: 0,
+      passageCountPeriod: 0,
+      unlockCount: 0,
+      ...(data.summary || {})
+    }
   } catch {
     if (!quiet) $q.notify({ type: 'negative', message: 'Грешка при зареждане' })
   } finally {
     if (!quiet) loading.value = false
   }
+}
+
+function exportPdf() {
+  const rows = byDay.value
+    .map(
+      (d) =>
+        `<tr>
+          <td>${d.day}</td>
+          <td style="text-align:right">${d.coin}</td>
+          <td style="text-align:right">${euro(d.coinCents)}</td>
+          <td style="text-align:right">${d.passage}</td>
+          <td style="text-align:right">${d.unlock}</td>
+          <td style="text-align:right">${d.cashout}</td>
+          <td style="text-align:right">${euro(d.cashoutCents)}</td>
+        </tr>`
+    )
+    .join('')
+
+  const eventRows = activityTotals.value
+    .map(
+      (t) =>
+        `<tr>
+          <td>${labelType(t.type)}</td>
+          <td style="text-align:right">${t.count}</td>
+          <td style="text-align:right">${formatExtra(t)}</td>
+        </tr>`
+    )
+    .join('')
+
+  const html = `<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8"/>
+  <title>BiPOS справка — ${periodTitle.value}</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #111; margin: 24px; font-size: 13px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    h2 { font-size: 15px; margin: 20px 0 8px; }
+    .meta { color: #555; margin-bottom: 16px; }
+    .cards { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0 20px; }
+    .card { border: 1px solid #ccc; border-radius: 6px; padding: 10px 14px; min-width: 160px; }
+    .card .label { color: #666; font-size: 11px; }
+    .card .value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid #ddd; padding: 6px 8px; }
+    th { background: #f3f3f3; text-align: left; }
+    .foot { margin-top: 24px; color: #777; font-size: 11px; }
+    @media print {
+      body { margin: 12mm; }
+      .noprint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <button class="noprint" onclick="window.print()" style="margin-bottom:12px;padding:8px 14px">
+    Печат / Запази като PDF
+  </button>
+  <h1>BiPOS Coin — месечна справка</h1>
+  <div class="meta">
+    Период: <strong>${periodTitle.value}</strong><br/>
+    Устройство: <strong>${deviceLabel.value}</strong><br/>
+    Генерирана: ${new Date().toLocaleString()}
+  </div>
+  <div class="cards">
+    <div class="card"><div class="label">Монети в периода</div><div class="value">${euro(summary.value.coinCents)}</div><div class="label">${summary.value.coinCount || 0} събития</div></div>
+    <div class="card"><div class="label">Инкасо в периода</div><div class="value">${euro(summary.value.cashoutCents)}</div><div class="label">${summary.value.cashoutCount || 0} пъти</div></div>
+    <div class="card"><div class="label">Преминавания в периода</div><div class="value">${summary.value.passageCountPeriod || 0}</div></div>
+    <div class="card"><div class="label">Отключвания</div><div class="value">${summary.value.unlockCount || 0}</div></div>
+    <div class="card"><div class="label">Каса сега (live)</div><div class="value">${euro(summary.value.cashCents)}</div></div>
+  </div>
+  <h2>По дни</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Ден</th><th>Монети бр.</th><th>Сума</th><th>Преминавания</th>
+        <th>Отключвания</th><th>Инкасо бр.</th><th>Инкасо €</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows || '<tr><td colspan="7">Няма данни за периода</td></tr>'}
+    </tbody>
+  </table>
+  <h2>Събития (обобщение)</h2>
+  <table>
+    <thead><tr><th>Тип</th><th>Брой</th><th>Детайл</th></tr></thead>
+    <tbody>${eventRows || '<tr><td colspan="3">—</td></tr>'}</tbody>
+  </table>
+  <div class="foot">BiPOS Coin · автоматична справка</div>
+  <script>setTimeout(function(){ window.print(); }, 300);<\/script>
+</body>
+</html>`
+
+  const w = window.open('', '_blank')
+  if (!w) {
+    $q.notify({ type: 'warning', message: 'Разреши pop-up за PDF експорт' })
+    return
+  }
+  w.document.open()
+  w.document.write(html)
+  w.document.close()
 }
 
 onMounted(async () => {
